@@ -29,13 +29,12 @@ import lombok.RequiredArgsConstructor;
 public class LoginController {
 
 	private final LoginService loginService;
-	
 	private final AuthenticationManager authenticationManager;
 	
 	@PostMapping("/register")
 	public ResponseEntity<LoginDto> register(@Valid @RequestBody LoginDto dto) {
 		LoginDto saveRegistration = loginService.saveRegistration(dto);
-	return new ResponseEntity<LoginDto>(saveRegistration, HttpStatus.CREATED);
+		return new ResponseEntity<LoginDto>(saveRegistration, HttpStatus.CREATED);
 	}
 	
 	@PostMapping("/login")
@@ -69,7 +68,7 @@ public class LoginController {
 	    if (auth == null) {
 	        return ResponseEntity.status(401).body(Map.of("error", "Not logged in"));
 	    }
-
+	    
 	    var role = auth.getAuthorities().iterator().next().getAuthority();
 	    System.out.println("authority == "+role);
 	    return ResponseEntity.ok(Map.of("email", auth.getName(), "role", role));
