@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -18,6 +19,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT); // 409
     }
 	
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ResponseEntity<?> handleNoResourceFound(NoResourceFoundException ex) {
+	    Map<String, String> error = new HashMap<>();
+	    error.put("error", ex.getMessage());
+	    return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+	}
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGlobalException(Exception ex) {
         Map<String, String> error = new HashMap<>();
