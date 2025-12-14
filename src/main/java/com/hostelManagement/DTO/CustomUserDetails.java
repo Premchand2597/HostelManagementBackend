@@ -11,8 +11,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.hostelManagement.Entity.LoginEntity;
 
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 @RequiredArgsConstructor
+@ToString
 public class CustomUserDetails implements UserDetails {
 	
 	private final LoginEntity user;

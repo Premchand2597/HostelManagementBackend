@@ -9,9 +9,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 import com.hostelManagement.Exception.CustomAuthEntryPoint;
@@ -25,11 +27,15 @@ public class SecurityConfig {
 	
 	private final CustomUserDetailsService customUserDetailsService;
 	private final CustomAuthEntryPoint customAuthEntryPoint;
+	private final JwtFilter jwtFilter;
 	
 	@Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+	                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)	// JWT = STATELESS
+	            )
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**").permitAll()
                 		.requestMatchers("/api/admin/**").hasRole("Admin")
                 		.requestMatchers("/api/user/**").hasAnyRole("User", "Admin")
@@ -41,9 +47,10 @@ public class SecurityConfig {
                     config.setAllowedOrigins(List.of("http://localhost:3000"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(true);      // ⭐ REQUIRED for cookies
+                    config.setAllowCredentials(false);     // JWT → no cookies
                     return config;
                 }))
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 	
