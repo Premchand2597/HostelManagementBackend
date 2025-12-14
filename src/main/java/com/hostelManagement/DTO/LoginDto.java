@@ -1,19 +1,19 @@
 package com.hostelManagement.DTO;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class LoginDto {
 	private long id;
-	@NotNull
+	@NotEmpty
 	private String name;
-	@NotNull
+	@NotEmpty
 	private String password;
-	@NotNull
+	@NotEmpty
 	@Email
 	private String email;
-	@NotNull
+	@NotEmpty
 	private String role;
 }
