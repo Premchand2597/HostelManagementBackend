@@ -1,4 +1,4 @@
-package com.hostelManagement.Security;
+package com.hostelManagement.Config;
 
 
 import java.util.List;

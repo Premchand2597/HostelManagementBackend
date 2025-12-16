@@ -2,6 +2,7 @@ package com.hostelManagement.Controller;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
@@ -19,17 +20,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hostelManagement.Config.CookieService;
+import com.hostelManagement.Config.JwtUtil;
 import com.hostelManagement.DTO.CustomUserDetails;
+import com.hostelManagement.DTO.LoginCustomResponse;
 import com.hostelManagement.DTO.LoginDto;
 import com.hostelManagement.DTO.LoginRequestDto;
 import com.hostelManagement.DTO.RefreshTokenDto;
 import com.hostelManagement.Entity.RefreshTokenEntity;
 import com.hostelManagement.Repo.RefreshTokenRepo;
-import com.hostelManagement.Security.JwtUtil;
 import com.hostelManagement.Service.CustomUserDetailsService;
 import com.hostelManagement.Service.LoginService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +49,7 @@ public class LoginController {
 	private final JwtUtil jwtUtil;
 	private final RefreshTokenRepo refreshTokenRepo;
 	private final ModelMapper modelMapper;
+	private final CookieService cookieService;
 	
 	@PostMapping("/register")
 	public ResponseEntity<LoginDto> register(@Valid @RequestBody LoginDto dto) {
@@ -53,7 +58,7 @@ public class LoginController {
 	}
 	
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto req, HttpServletRequest request) {
+	public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto req, HttpServletRequest request, HttpServletResponse response) {
 
 	    try {
 	        Authentication authentication = authenticationManager.authenticate(
@@ -80,18 +85,36 @@ public class LoginController {
 	        
 	        System.out.println("accessToken in login endpoint == "+accessToken+" refreshToken in login endpoint = "+refreshToken);
 	        
-	        LocalDate expiryDate = LocalDate.now().plus(7, ChronoUnit.DAYS);
-	        RefreshTokenDto refreshTokenDto = new RefreshTokenDto(refreshToken, user.getUsername(), expiryDate);
+	        LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(86400);
+//	        RefreshTokenDto refreshTokenDto = new RefreshTokenDto(refreshToken, user.getUsername(), expiryDate);
+	        
+	        var refreshTokenDto = RefreshTokenDto.builder()
+	        						.token(refreshToken)
+	        						.createdAt(LocalDateTime.now())
+	        						.expiresAt(expiryDate)
+	        						.username(user.getUsername())
+	        						.revoked(false)
+	        						.build();
+	        
 	        refreshTokenRepo.save(modelMapper.map(refreshTokenDto, RefreshTokenEntity.class));
 	        
-	        return ResponseEntity.ok(Map.of(
+	        // use cookie service to attach refresh token in cookie
+	        cookieService.attachRefreshCookie(response, refreshToken, 86400);
+	        cookieService.addNoStoreHeader(response);
+	        
+	        LoginCustomResponse res = new LoginCustomResponse(user.getUsername(), accessToken);
+	        
+	        /*return ResponseEntity.ok(Map.of(
 	                "accessToken", accessToken,
 	                "refreshToken", refreshToken
-	        ));
+	        ));*/
+	        
+	        return new ResponseEntity<LoginCustomResponse>(res, HttpStatus.OK);
 
 	    } catch (Exception ex) {
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	            .body(Map.of("error", ex.getMessage()));
+	        /*return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	            .body(Map.of("error", ex.getMessage()));*/
+	        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
 	    }
 	}
 	
@@ -118,7 +141,7 @@ public class LoginController {
 	    return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
 	} */
 	
-	@PostMapping("/refresh")
+	/*@PostMapping("/refresh")
 	public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> req) {
 		String refreshToken = req.get("refreshToken");
 
@@ -129,7 +152,7 @@ public class LoginController {
 	            .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
 	        System.out.println("storedToken in refresh end point = "+storedToken);
 
-	        if (storedToken.getExpiryDate().isBefore(LocalDate.now())) {
+	        if (storedToken.getExpiresAt().isBefore(LocalDateTime.now())) {
 	            refreshTokenRepo.delete(storedToken);
 	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
 	                    .body(Map.of("error", "Refresh token expired"));
@@ -163,6 +186,89 @@ public class LoginController {
 	        .ifPresent(refreshTokenRepo::delete);
 
 	    return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+	}*/
+	
+	
+	@PostMapping("/refresh")
+	public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+	    String refreshToken = cookieService.getRefreshTokenFromCookie(request);
+
+	    if (refreshToken == null) {
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token missing");
+	    }
+
+	    // 1️⃣ Check if refresh token exists in DB
+	    RefreshTokenEntity storedToken = refreshTokenRepo.findByToken(refreshToken).orElseThrow(()->new Exception());
+	    if (storedToken == null || storedToken.isRevoked()) {
+	        cookieService.clearRefreshCookie(response);
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token invalid");
+	    }
+
+	    // 2️⃣ Check if token expired in DB
+	    if (storedToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+	        cookieService.clearRefreshCookie(response);
+	        storedToken.setRevoked(true);
+	        refreshTokenRepo.save(storedToken);
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token expired");
+	    }
+
+	    // 3️⃣ Validate signature normally
+	    if (!jwtUtil.validateRefreshToken(refreshToken)) {
+	        cookieService.clearRefreshCookie(response);
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token signature");
+	    }
+
+	    String username = storedToken.getUsername();
+
+	    // Load user for role
+	    CustomUserDetails user = (CustomUserDetails) customUserDetailsService.loadUserByUsername(username);
+	    String role = user.getAuthorities().iterator().next().getAuthority();
+
+	    // 4️⃣ Generate new access + refresh tokens
+	    String newAccessToken = jwtUtil.generateAccessToken(username, role);
+	    String newRefreshToken = jwtUtil.generateRefreshToken(username);
+
+	    // 5️⃣ Revoke old token in DB
+	    storedToken.setRevoked(true);
+	    
+	    // 6️⃣ Save new token in DB
+	    var refreshTokenDto = RefreshTokenDto.builder()
+				.token(newRefreshToken)
+				.createdAt(LocalDateTime.now())
+				.expiresAt(LocalDateTime.now().plusSeconds(86400))
+				.username(username)
+				.revoked(false)
+				.replacedByToken(storedToken.getToken())
+				.build();
+
+	    refreshTokenRepo.save(storedToken);
+	    refreshTokenRepo.save(modelMapper.map(refreshTokenDto, RefreshTokenEntity.class));
+
+	    // 7️⃣ Send new refresh token in cookie
+	    cookieService.attachRefreshCookie(response, newRefreshToken, 86400);
+	    cookieService.addNoStoreHeader(response);
+
+	    return ResponseEntity.ok(new LoginCustomResponse(username, newAccessToken));
+	}
+
+	
+	@PostMapping("/logout")
+	public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+	    String refreshToken = cookieService.getRefreshTokenFromCookie(request);
+
+	    if (refreshToken != null) {
+	        RefreshTokenEntity storedToken = refreshTokenRepo.findByToken(refreshToken).orElseThrow(()->new Exception());
+	        if (storedToken != null) {
+	            storedToken.setRevoked(true);
+	            refreshTokenRepo.save(storedToken);
+	        }
+	    }
+
+	    cookieService.clearRefreshCookie(response);
+
+	    return ResponseEntity.ok("Logged out successfully");
 	}
 
 }
