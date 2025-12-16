@@ -19,7 +19,6 @@ public class LoginEntity {
 	private long id;
 	@NotNull
 	private String name;
-	@NotNull
 	private String password;
 	@NotNull
 	@Email
@@ -27,4 +26,6 @@ public class LoginEntity {
 	private String email;
 	@NotNull
 	private String role;
+	
+	private String provider;
 }

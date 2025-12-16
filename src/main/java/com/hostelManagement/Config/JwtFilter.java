@@ -23,13 +23,22 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService customUserDetailsService;
+    
+    // ADD THIS METHOD
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/oauth2/")
+            || path.startsWith("/login/oauth2/")
+            || path.startsWith("/api/auth/");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
                                     FilterChain chain) throws IOException, ServletException {
 
         String authHeader = req.getHeader("Authorization");
-        System.out.println("authHeader = "+authHeader);
+        System.out.println("authHeader in JwtFilter endpoint = "+authHeader);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             
