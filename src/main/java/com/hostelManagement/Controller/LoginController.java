@@ -1,6 +1,5 @@
 package com.hostelManagement.Controller;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -11,6 +10,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -200,6 +200,8 @@ public class LoginController {
 
 	    // 1️⃣ Check if refresh token exists in DB
 	    RefreshTokenEntity storedToken = refreshTokenRepo.findByToken(refreshToken).orElseThrow(()->new Exception());
+	    String username = storedToken.getUsername();
+	    
 	    if (storedToken == null || storedToken.isRevoked()) {
 	        cookieService.clearRefreshCookie(response);
 	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token invalid");
@@ -218,8 +220,12 @@ public class LoginController {
 	        cookieService.clearRefreshCookie(response);
 	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token signature");
 	    }
-
-	    String username = storedToken.getUsername();
+	    
+	    // Validate user by comparing username extracting from both db and refresh token
+	    String extractedUserNameFromRefreshToken = jwtUtil.extractUsername(refreshToken);
+	    if(!extractedUserNameFromRefreshToken.equals(username)) {
+	    	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token does not belongs to this user !");
+	    }
 
 	    // Load user for role
 	    CustomUserDetails user = (CustomUserDetails) customUserDetailsService.loadUserByUsername(username);
@@ -267,7 +273,8 @@ public class LoginController {
 	    }
 
 	    cookieService.clearRefreshCookie(response);
-
+	    cookieService.addNoStoreHeader(response);
+	    
 	    return ResponseEntity.ok("Logged out successfully");
 	}
 
