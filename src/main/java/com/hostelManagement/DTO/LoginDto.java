@@ -2,6 +2,7 @@ package com.hostelManagement.DTO;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Builder.Default;
 import lombok.Data;
 
 @Data
@@ -15,5 +16,5 @@ public class LoginDto {
 	@Email
 	private String email;
 	@NotEmpty
-	private String role;
+	private String role="User";
 }
