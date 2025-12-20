@@ -10,6 +10,6 @@ public class AdminController {
 	
 	@GetMapping("/data")
 	public String getAdminData() {
-	    return "Admin Data";
+	    return "Admin Data for testing";
 	}
 }

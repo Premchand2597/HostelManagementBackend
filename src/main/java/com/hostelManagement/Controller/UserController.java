@@ -10,6 +10,6 @@ public class UserController {
 	
 	@GetMapping("/data")
 	public String getUserData() {
-		return "User Data";
+		return "User Data for testing";
 	}
 }
