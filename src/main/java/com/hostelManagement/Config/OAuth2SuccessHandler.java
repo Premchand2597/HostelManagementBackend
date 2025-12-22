@@ -1,4 +1,4 @@
-package com.hostelManagement.Config;
+/*package com.hostelManagement.Config;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -101,7 +101,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     }
 
 
-    /** ---------------- GOOGLE ---------------- **/
+    // ---------------- GOOGLE ---------------- 
     private LoginEntity extractGoogleUser(OAuth2User oauth2User) {
 
         String email = oauth2User.getAttribute("email");
@@ -124,7 +124,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             });
     }
 
-    /** ---------------- GITHUB ---------------- **/
+    // ---------------- GITHUB ----------------
     private LoginEntity extractGithubUser(OAuth2User oauth2User) {
 
         String email = oauth2User.getAttribute("email");
@@ -155,4 +155,4 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 return repo.save(user);
             });
     }
-}
+} */

@@ -14,7 +14,7 @@ public class JwtUtil {
 
     private final String SECRET = "my_super_secret_jwt_key_which_is_32_chars_long!";
 
-    private final long ACCESS_EXP = 1000 * 60 * 15;   // 15 min
+    private final long ACCESS_EXP = 1000 * 60 * 15;   // 1000 * 60 * 15 -> 15 min
     private final long REFRESH_EXP = 1000 * 60 * 60 * 24; // 1 day
 
     public String generateAccessToken(String username, String role) {

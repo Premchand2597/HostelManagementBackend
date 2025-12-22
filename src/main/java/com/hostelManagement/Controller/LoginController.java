@@ -102,7 +102,8 @@ public class LoginController {
 	        cookieService.attachRefreshCookie(response, refreshToken, 86400);
 	        cookieService.addNoStoreHeader(response);
 	        
-	        LoginCustomResponse res = new LoginCustomResponse(user.getUsername(), accessToken);
+	        LoginCustomResponse res = new LoginCustomResponse(user.getUsername(), accessToken, 
+	        		user.getAuthorities().iterator().next().getAuthority());
 	        
 	        /*return ResponseEntity.ok(Map.of(
 	                "accessToken", accessToken,
@@ -255,7 +256,7 @@ public class LoginController {
 	    cookieService.attachRefreshCookie(response, newRefreshToken, 86400);
 	    cookieService.addNoStoreHeader(response);
 
-	    return ResponseEntity.ok(new LoginCustomResponse(username, newAccessToken));
+	    return ResponseEntity.ok(new LoginCustomResponse(username, newAccessToken, role));
 	}
 
 	

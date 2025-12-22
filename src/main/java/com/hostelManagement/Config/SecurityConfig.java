@@ -35,7 +35,7 @@ public class SecurityConfig {
 	private final CustomUserDetailsService customUserDetailsService;
 	private final CustomAuthEntryPoint customAuthEntryPoint;
 	private final JwtFilter jwtFilter;
-	private final AuthenticationSuccessHandler authenticationSuccessHandler;
+//	private final AuthenticationSuccessHandler authenticationSuccessHandler;
 	
 	@Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -52,10 +52,10 @@ public class SecurityConfig {
                 		.anyRequest().authenticated())
                 .userDetailsService(customUserDetailsService)
                 .exceptionHandling(ex->ex.authenticationEntryPoint(customAuthEntryPoint))
-                .oauth2Login(auth-> auth
+                /*.oauth2Login(auth-> auth
                 		.successHandler(authenticationSuccessHandler)
                 		.failureHandler(null)
-                	)
+                	)*/
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
