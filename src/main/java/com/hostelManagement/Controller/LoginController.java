@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
 import org.modelmapper.ModelMapper;
@@ -14,6 +15,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -234,7 +236,7 @@ public class LoginController {
 
 	    // 4️⃣ Generate new access + refresh tokens
 	    String newAccessToken = jwtUtil.generateAccessToken(username, role);
-	    String newRefreshToken = jwtUtil.generateRefreshToken(username);
+	    String newRefreshToken = jwtUtil.generateRefreshToken(username + UUID.randomUUID());
 
 	    // 5️⃣ Revoke old token in DB
 	    storedToken.setRevoked(true);
