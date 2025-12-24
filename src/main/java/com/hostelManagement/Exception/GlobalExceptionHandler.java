@@ -20,6 +20,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT); // 409
     }
 	
+	@ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<?> handleEmailExists(ResourceNotFoundException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+	
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<?> handleNoResourceFound(NoResourceFoundException ex) {
 	    Map<String, String> error = new HashMap<>();

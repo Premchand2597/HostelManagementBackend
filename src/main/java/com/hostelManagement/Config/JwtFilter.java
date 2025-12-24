@@ -11,6 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.hostelManagement.Service.CustomUserDetailsService;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,20 +46,35 @@ public class JwtFilter extends OncePerRequestFilter {
         	String token = authHeader.substring(7);
             System.out.println("token in JwtFilter endpoint = "+token);
 
-            Claims claims = jwtUtil.validateToken(token);
-            System.out.println("claims in JwtFilter endpoint = "+claims);
-            
-            String username = claims.getSubject();
-            System.out.println("username in JwtFilter endpoint = "+username);
+            try {
+	            Claims claims = jwtUtil.validateToken(token);
+	            System.out.println("claims in JwtFilter endpoint = "+claims);
+	            
+	            String username = claims.getSubject();
+	            System.out.println("username in JwtFilter endpoint = "+username);
+	
+	            UserDetails user = customUserDetailsService.loadUserByUsername(username);
+	            System.out.println("user in JwtFilter endpoint = "+user);
+	
+	            UsernamePasswordAuthenticationToken auth =
+	                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+	            System.out.println("auth in JwtFilter endpoint = "+auth);
+	
+	            SecurityContextHolder.getContext().setAuthentication(auth);
+            }	catch (ExpiredJwtException e) {
+				System.out.println(e.getMessage());
+	            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	            res.setContentType("application/json");
+	            res.getWriter().write("{\"error\":\"Access token has been expired, please do login again!\"}");
+	            return;
 
-            UserDetails user = customUserDetailsService.loadUserByUsername(username);
-            System.out.println("user in JwtFilter endpoint = "+user);
-
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            System.out.println("auth in JwtFilter endpoint = "+auth);
-
-            SecurityContextHolder.getContext().setAuthentication(auth);
+	        } catch (Exception e) {
+	        	System.out.println(e.getMessage());
+	        	res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	            res.setContentType("application/json");
+	            res.getWriter().write("{\"error\":\"Invalid token\"}");
+	            return;
+			}
         }
 
         chain.doFilter(req, res);
