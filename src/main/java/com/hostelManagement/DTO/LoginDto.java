@@ -15,6 +15,5 @@ public class LoginDto {
 	@NotEmpty
 	@Email
 	private String email;
-	@NotEmpty
-	private String role="User";
+	private String role;
 }

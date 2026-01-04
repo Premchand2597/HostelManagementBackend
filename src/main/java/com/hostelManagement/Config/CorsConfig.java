@@ -1,6 +1,5 @@
 package com.hostelManagement.Config;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -17,8 +16,10 @@ public class CorsConfig {
 		
 		String[] urls = corsUrls.trim().split(",");
 		
+//		Arrays.stream(urls).forEach(System.out::print);
+		
 		var config = new CorsConfiguration();
-		config.setAllowedOrigins(Arrays.asList(urls));
+		config.setAllowedOrigins(List.of(urls));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowCredentials(true);

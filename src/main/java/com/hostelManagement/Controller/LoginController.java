@@ -55,6 +55,9 @@ public class LoginController {
 	
 	@PostMapping("/register")
 	public ResponseEntity<LoginDto> register(@Valid @RequestBody LoginDto dto) {
+		if("".equals(dto.getRole())) {
+			dto.setRole("User");
+		}
 		LoginDto saveRegistration = loginService.saveRegistration(dto);
 		return new ResponseEntity<LoginDto>(saveRegistration, HttpStatus.CREATED);
 	}
