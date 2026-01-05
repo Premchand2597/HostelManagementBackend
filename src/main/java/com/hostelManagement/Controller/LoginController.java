@@ -228,10 +228,12 @@ public class LoginController {
 	    }
 	    
 	    // Validate user by comparing username extracting from both db and refresh token
-	    String extractedUserNameFromRefreshToken = jwtUtil.extractUsername(refreshToken);
+	    /*String extractedUserNameFromRefreshToken = jwtUtil.extractUsername(refreshToken);
+	    System.out.println("extractedUserNameFromRefreshToken == "+extractedUserNameFromRefreshToken);
+	    System.out.println("username == "+username);
 	    if(!extractedUserNameFromRefreshToken.equals(username)) {
 	    	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token does not belongs to this user !");
-	    }
+	    }*/
 
 	    // Load user for role
 	    CustomUserDetails user = (CustomUserDetails) customUserDetailsService.loadUserByUsername(username);
